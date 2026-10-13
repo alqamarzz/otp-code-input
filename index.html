@@ -420,12 +420,25 @@
     }
 
     // Render slots contents and cursor
-    function render() {
+    function render(newlyEnteredIndex = -1) {
       const filledCount = digits.filter(d => d !== "").length;
 
       slots.forEach((slot, i) => {
         if (digits[i] !== "") {
-          slot.innerHTML = `<span class="digit-val">${digits[i]}</span>`;
+          const currentSpan = slot.querySelector(".digit-val");
+          // If the digit is already displayed and not newly typed, don't re-trigger animation
+          if (currentSpan && currentSpan.textContent === digits[i] && i !== newlyEnteredIndex) {
+            // Keep existing digit completely still
+            return;
+          }
+
+          if (i === newlyEnteredIndex) {
+            // Animate only the newly entered digit
+            slot.innerHTML = `<span class="digit-val">${digits[i]}</span>`;
+          } else {
+            // Already entered digits or batch pastes don't replay the animation
+            slot.innerHTML = `<span class="digit-val" style="animation: none;">${digits[i]}</span>`;
+          }
         } else if (i === filledCount && !isProcessing) {
           slot.innerHTML = `<div class="cursor-line"></div>`;
         } else {
@@ -437,17 +450,21 @@
     }
 
     // Keystroke handling
+    let prevLength = 0;
     hiddenInput.addEventListener("input", (e) => {
       if (isProcessing) return;
 
       const rawVal = e.target.value.replace(/\D/g, "").slice(0, LENGTH);
       e.target.value = rawVal;
 
+      const newIdx = rawVal.length > prevLength ? rawVal.length - 1 : -1;
+      prevLength = rawVal.length;
+
       for (let i = 0; i < LENGTH; i++) {
         digits[i] = rawVal[i] || "";
       }
 
-      render();
+      render(newIdx);
 
       if (rawVal.length === LENGTH) {
         handleComplete(rawVal);
@@ -519,6 +536,7 @@
     function resetAll() {
       digits = Array(LENGTH).fill("");
       hiddenInput.value = "";
+      prevLength = 0;
       slots.forEach(s => {
         s.className = "slot";
         s.innerHTML = "";
