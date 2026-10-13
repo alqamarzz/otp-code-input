@@ -124,10 +124,11 @@
       pointer-events: none;
       z-index: 5;
       border: var(--border-thickness) solid var(--active-border);
+      opacity: 1;
       /* Fluid iOS spring transition */
       transition: transform 0.32s cubic-bezier(0.34, 1.35, 0.64, 1),
                   border-radius 0.25s ease,
-                  width 0.25s ease,
+                  width 0.32s cubic-bezier(0.34, 1.35, 0.64, 1),
                   opacity 0.2s ease;
     }
 
@@ -145,7 +146,7 @@
     }
 
     .active-indicator.hidden {
-      opacity: 0;
+      opacity: 0 !important;
     }
 
     /* Blinking vertical cursor */
@@ -496,15 +497,23 @@
         s.className = "slot";
         s.innerHTML = "";
       });
+
+      // Keep indicator hidden while capsule expands back
+      activeIndicator.classList.add("hidden");
+
       capsule.classList.remove("shrunk", "shake");
       statusView.classList.remove("verified-state");
       statusView.innerHTML = `
         <div class="spinner" id="spinner"></div>
         <span id="statusLabel">Verifying</span>
       `;
-      isProcessing = false;
-      render();
-      hiddenInput.focus();
+
+      // Wait for capsule expansion transition to complete (520ms) before rendering indicator
+      setTimeout(() => {
+        isProcessing = false;
+        render();
+        hiddenInput.focus();
+      }, 540);
     }
 
     // Init
